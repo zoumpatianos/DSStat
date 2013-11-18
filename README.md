@@ -1,4 +1,4 @@
 tscandy
 =======
 
-tscandy
+- The tscandy library
