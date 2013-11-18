@@ -5,12 +5,19 @@ from window.sliding_window import SlidingWindow
 from containers.file_container import FileContainer
 
 if __name__ == "__main__":
-    stock = StocksFileParser(sys.argv[1])
-    stock.add_filter(SizeFilter(int(sys.argv[2])))
-    sliding = SlidingWindow(int(sys.argv[3]))
-    filecontainer = FileContainer(sys.argv[4])
+    parser = StocksFileParser(sys.argv[1])
+
+    parser.add_filter(SizeFilter(int(sys.argv[2])))
+    filecontainer = FileContainer(sys.argv[3])
+
+    if len(sys.argv) > 4:
+        sliding = SlidingWindow(int(sys.argv[4]))
+        generator = sliding.window(parser.parse())
+    else:
+        generator = parser.parse()
+
     total = 0
-    for ts in sliding.window(stock.parse()):
+    for ts in generator:
         total += 1
         print "\r%d" % total
         filecontainer.write(ts)
