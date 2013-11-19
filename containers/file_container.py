@@ -15,7 +15,7 @@ class FileContainer(object):
             s = struct.pack('f'*len(ts), *ts)
             self.f.write(s)
         else:
-            self.f.write(" ".join(ts))
+            self.f.write(" ".join(map(str, ts)) + "\n")
 
     def close(self):
         self.f.close()

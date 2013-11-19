@@ -2,7 +2,6 @@ import numpy
 import random
 
 def add_noise(q, intensity=0.1, seed=4564):
-    print "Adding noise"
     random.seed(seed)
     q = numpy.array(q)
     std = numpy.std(q)

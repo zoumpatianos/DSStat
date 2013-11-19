@@ -5,6 +5,5 @@ def normalize(q):
     q = numpy.array(q)
     std = numpy.std(q)
     mean = numpy.mean(q)
-
     q = (q - std) / mean
     return q

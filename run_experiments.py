@@ -1,12 +1,17 @@
-from experiments.random_queries_experiment import RandomQueriesExperiment
+from experiments.in_memory_distances_experiment import InMemoryDistancesExperiment
 from parsers.binary_parser import BinaryParser
+from containers.file_container import FileContainer
 
 if __name__ == "__main__":
     import sys
     parser = BinaryParser(sys.argv[1], int(sys.argv[2]))
-    experiment = RandomQueriesExperiment(normalize=True, window=None)
+    experiment = InMemoryDistancesExperiment(normalize=True, window=None)
+    experiment_output_container = FileContainer("output.txt", binary=False)
+
     print "Loading data..."
     experiment.load_data(parser, 100)
     print "Loaded: %d time series." % len(experiment.dataset)
-    print "Running 10 queries with 0 noise"
-    experiment.run(10, noise=0.1)
+    print "Running queries..."
+    for query_result in experiment.run_queries(10, noise=0.1):
+        experiment_output_container.write(query_result)
+    experiment_output_container.close()
