@@ -6,5 +6,10 @@ from containers.file_container import FileContainer
 
 if __name__ == "__main__":
     physioparser = PhysionetParser(sys.argv[1])
-    for ts in physioparser.parse():
-        print ts
+    containers = []
+    for channels in physioparser.parse():
+        for channel in range(0, len(channels)):
+            if len(containers) < channel + 1:
+                containers += [FileContainer(sys.argv[2] + ".channel_%d" % channel)]
+            containers[channel].write(channels[channel])
+

@@ -2,7 +2,8 @@ import tarfile
 from parser import Parser
 
 class StocksFileParser(Parser):
-    def parse(self):
+    MULTICHANNEL=False
+    def read(self):
         tar = tarfile.open(self.input_file, "r:gz")
         for file in tar.getmembers():
             ts = []
@@ -16,6 +17,4 @@ class StocksFileParser(Parser):
                         ts += [float(tokens[4])]
                 except:
                     pass
-            ts = self._apply_filters(ts)
-            if ts:
-                yield ts
+            yield ts

@@ -10,11 +10,7 @@ if __name__ == "__main__":
     parser.add_filter(SizeFilter(int(sys.argv[2])))
     filecontainer = FileContainer(sys.argv[3])
 
-    if len(sys.argv) > 4:
-        sliding = SlidingWindow(int(sys.argv[4]))
-        generator = sliding.window(parser.parse())
-    else:
-        generator = parser.parse()
+    generator = parser.parse()
 
     total = 0
     for ts in generator:
