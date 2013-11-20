@@ -1,4 +1,5 @@
 import os
+import tarfile
 from experiments.results.utils.make_html_page import makeHTMLpage
 
 class ResultsDirectory(object):
@@ -13,6 +14,8 @@ class ResultsDirectory(object):
         index_file.write(index)
         index_file.close()
     def zip_directory(self, target_file):
-        pass
+        tar = tarfile.open(self.name + '.tar.gz'), 'w:gz')
+        tar.add(self.name)
+        tar.close()
     def copy_directory(self, target):
         pass

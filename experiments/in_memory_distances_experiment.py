@@ -6,6 +6,7 @@ from utils.euclidean_distance import euclidean_distance
 from utils.add_noise import add_noise
 from utils.normalize import normalize
 from plot.timeseries_plot import TimeSeriesPlot
+from plot.distances_plot import DistancesPlot
 from results.results_directory import ResultsDirectory
 
 
@@ -67,6 +68,15 @@ class InMemoryDistancesExperiment(object):
 
         if sort:
             distances = sorted(distances)
+
+        distances_histogram = DistancesPlot()
+        distances_histogram.add_distances(distances)
+        distances_histogram.save(self.results_directory.create_filename("query_" + str(qid) + "_dist_hist.pdf"))
+
+        distnaces_ratio = DistancesPlot()
+        distnaces_ratio.add_distances(distances / distances[0])
+        distances_histogram.save(self.results_directory.create_filename("query_" + str(qid) + "_dist_ratio_hist.pdf"))
+
         return distances
 
     def run_queries(self, queries, noise, seed=10251):
