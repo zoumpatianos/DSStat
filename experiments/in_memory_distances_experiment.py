@@ -8,16 +8,17 @@ from utils.normalize import normalize
 from plot.timeseries_plot import TimeSeriesPlot
 from plot.distances_plot import DistancesPlot
 from results.results_directory import ResultsDirectory
-
+from containers.file_container import FileContainer
+from net.scp import SCP
 
 class InMemoryDistancesExperiment(object):
-    def __init__(self, experiment=None, normalize=False, window=None):
+    def __init__(self, experiment=None, normalize=False, window=None, overwrite=True):
         self.dataset = []
         self.loaded = 0
         self.normalize = normalize
         self.window = window
         if experiment:
-            self.results_directory = ResultsDirectory(experiment)
+            self.results_directory = ResultsDirectory(experiment, overwrite)
         else:
             ts = time.time()
             st = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d%H%M%S')
@@ -69,21 +70,33 @@ class InMemoryDistancesExperiment(object):
         if sort:
             distances = sorted(distances)
 
+        query_container = FileContainer(self.results_directory.create_filename("query_%d.txt" % qid), binary=False)
+        query_container.write(query)
+        query_container.close()
+
+        distances_container = FileContainer(self.results_directory.create_filename("query_%d_distances.txt" % qid), binary=False)
+        distances_container.write(distances)
+        distances_container.close()
+
         distances_histogram = DistancesPlot()
         distances_histogram.add_distances(distances)
         distances_histogram.save(self.results_directory.create_filename("query_" + str(qid) + "_dist_hist.pdf"))
 
-        distnaces_ratio = DistancesPlot()
-        distnaces_ratio.add_distances(distances / distances[0])
-        distances_histogram.save(self.results_directory.create_filename("query_" + str(qid) + "_dist_ratio_hist.pdf"))
+        distances_ratio = DistancesPlot()
+        distances_ratio.add_distances(distances / distances[0])
+        distances_ratio.save(self.results_directory.create_filename("query_" + str(qid) + "_dist_ratio_hist.pdf"))
 
         return distances
 
-    def run_queries(self, queries, noise, seed=10251):
+    def run(self, queries, noise, seed=10251):
         for i in range(0, queries):
             random.seed(seed + i)
             qid = random.randint(0, self.loaded - 1)
-            yield self.calculate_distances(qid, noise)
+            self.calculate_distances(qid, noise)
 
-
+    def finalize(self):
+        remote_server = SCP("zoumpatianos@disi.unitn.it")
+        self.results_directory.create_listing()
+        remote_server.copy(self.results_directory.name, "public_html/", True)
+        return self.results_directory.name
 

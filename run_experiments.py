@@ -11,10 +11,11 @@ if __name__ == "__main__":
     experiment.load_data(parser)
     print "Loaded: %d time series." % len(experiment.dataset)
 
+    print "Running experiment..."
+    experiment.run(10, noise=0.5)
 
-    print "Running queries..."
-    experiment_output_container = FileContainer("output.txt", binary=False)
-    for query_result in experiment.run_queries(10, noise=0.5):
-        experiment_output_container.write(query_result)
-    experiment_output_container.close()
-    experiment.results_directory.create_listing()
+    print "Experiment finished..."
+    output = experiment.finalize()
+
+    print "Created: %s" % output
+
