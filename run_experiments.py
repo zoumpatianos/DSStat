@@ -4,7 +4,7 @@ from containers.file_container import FileContainer
 
 if __name__ == "__main__":
     import sys
-    parser = BinaryParser(sys.argv[1], int(sys.argv[2]))
+    parser = BinaryParser(filename=sys.argv[1], ts_size=int(sys.argv[2]))
     experiment = InMemoryDistancesExperiment("test_experiment", normalize=True, window=None)
 
     print "Loading data..."
