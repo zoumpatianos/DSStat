@@ -1,40 +1,64 @@
 import random
+import os
+import datetime
+import time
 from utils.euclidean_distance import euclidean_distance
 from utils.add_noise import add_noise
 from utils.normalize import normalize
+from plot.timeseries_plot import TimeSeriesPlot
+from results.results_directory import ResultsDirectory
+
 
 class InMemoryDistancesExperiment(object):
-    def __init__(self, normalize=False, window=None):
+    def __init__(self, experiment=None, normalize=False, window=None):
         self.dataset = []
         self.loaded = 0
         self.normalize = normalize
         self.window = window
+        if experiment:
+            self.results_directory = ResultsDirectory(experiment)
+        else:
+            ts = time.time()
+            st = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d%H%M%S')
+            self.results_directory = ResultsDirectory(st)
+        print "Starting experiment (%s) with normalization: %s and window: %s" % (experiment, self.normalize, self.window)
+        self.dataset_plot = TimeSeriesPlot()
 
     def _load(self, ts):
         if self.window:
             for ts_win in self.window.window(ts):
-                if normalize:
+                if self.normalize:
                     ts_win = normalize(ts_win)
+                self.dataset_plot.add_timeseries(ts_win)
                 self.dataset += [ts_win]
         else:
-            if normalize:
-                ts = normalize(ts)
-            self.dataset += [ts]
+            ts_win = ts
+            if self.normalize:
+                ts_win = normalize(ts)
+            else:
+                ts_win = ts
+            self.dataset_plot.add_timeseries(ts_win)
+            self.dataset += [ts_win]
 
     def load_data(self, parser, size=None):
         self.loaded = 0
         for ts in parser.parse():
-            self._load(ts)
+            ts = self._load(ts)
             self.loaded += 1
             if size:
                 if self.loaded >= size:
                     break
+        self.dataset_plot.save(self.results_directory.create_filename("dataset.png"))
 
     def calculate_distances(self, qid, noise, sort=True):
         distances = []
         query = self.dataset[qid]
         if noise:
+            plot = TimeSeriesPlot()
+            plot.add_timeseries(query)
             query = add_noise(query, noise)
+            plot.add_timeseries(query)
+            plot.save(self.results_directory.create_filename("query_" + str(qid)+".pdf"))
         for i in range(0, self.loaded):
             if i == qid:
                 continue
