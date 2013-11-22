@@ -86,6 +86,14 @@ class InMemoryDistancesExperiment(object):
         distances_ratio.add_distances(distances / distances[0])
         distances_ratio.save(self.results_directory.create_filename("query_" + str(qid) + "_dist_ratio_hist.pdf"))
 
+
+        distances_plot = TimeSeriesPlot()
+        distances_plot.add_timeseries(distances[0:100])
+        distances_plot.save(self.results_directory.create_filename("query_" + str(qid) + "_dist_top100.png"))
+
+        distances_plot = TimeSeriesPlot()
+        distances_plot.add_timeseries((distances / distances[0])[0:100])
+        distances_plot.save(self.results_directory.create_filename("query_" + str(qid) + "_dist_top100_ratios.png"))
         return distances
 
     def run(self, queries, noise, seed=10251):
