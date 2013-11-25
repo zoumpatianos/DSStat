@@ -2,11 +2,13 @@ import random
 import os
 import datetime
 import time
+import numpy
 from utils.euclidean_distance import euclidean_distance
 from utils.add_noise import add_noise
 from utils.normalize import normalize
 from plot.timeseries_plot import TimeSeriesPlot
 from plot.distances_plot import DistancesPlot
+from plot.workload_plot import WorkloadPlot
 from results.results_directory import ResultsDirectory
 from containers.file_container import FileContainer
 from net.scp import SCP
@@ -97,10 +99,17 @@ class InMemoryDistancesExperiment(object):
         return distances
 
     def run(self, queries, noise, seed=10251):
+        all_distances = []
         for i in range(0, queries):
             random.seed(seed + i)
             qid = random.randint(0, self.loaded - 1)
-            self.calculate_distances(qid, noise)
+            all_distances += [self.calculate_distances(qid, noise)]
+        workload_plot = WorkloadPlot()
+        workload_plot.add_workload(all_distances)
+        workload_plot.save(self.results_directory.create_filename("workload_plot.pdf"))
+
+        #TODO: Plot error chart
+
 
     def finalize(self):
         remote_server = SCP("zoumpatianos@disi.unitn.it")
