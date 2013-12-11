@@ -5,11 +5,12 @@ import re
 from parser import Parser
 
 class PhysionetParser(Parser):
-    BINARY="LD_LIBRARY_PATH=/home/zoumpatianos/tsbench-datasets/CODE/tscandy/bin/wfdb-10.5.20/build/lib64 /home/zoumpatianos/tsbench-datasets/CODE/tscandy/bin/wfdb-10.5.20/build/bin/rdsamp -r "
+    BINARY="LD_LIBRARY_PATH=/home/zoumpatianos/tsbench-datasets/CODE/tsbench/bin/wfdb-10.5.20/build/lib64 /home/zoumpatianos/tsbench-datasets/CODE/tsbench/bin/wfdb-10.5.20/build/bin/rdsamp -r "
     MULTICHANNEL=True
 
     def __init__(self, dataset):
         self.dataset = dataset
+        self._filters = []
 
     def download(self, db):
         p = subprocess.Popen("wget -r -np http://physionet.org/physiobank/database/%s/" % db,

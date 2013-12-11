@@ -10,6 +10,6 @@ if __name__ == "__main__":
     for channels in physioparser.parse():
         for channel in range(0, len(channels)):
             if len(containers) < channel + 1:
-                containers += [FileContainer(sys.argv[2] + ".channel_%d" % channel)]
+                containers += [FileContainer(sys.argv[2] + ".channel_%d" % channel, binary=False)]
             containers[channel].write(channels[channel])
 
