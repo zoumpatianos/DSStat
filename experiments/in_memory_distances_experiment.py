@@ -3,7 +3,7 @@ import os
 import datetime
 import time
 import numpy
-from utils.euclidean_distance import euclidean_distance
+from utils.euclidean_distance import euclidean_distance, euclidean_distance_1arg
 from utils.add_noise import add_noise
 from utils.normalize import normalize
 from plot.timeseries_plot import TimeSeriesPlot
@@ -83,7 +83,7 @@ class InMemoryDistancesExperiment(object):
                     break
         self.dataset_plot.save(self.results_directory.create_filename("dataset.png"))
 
-    def calculate_distances(self, qid, noise, sort=True):
+    def calculate_distances(self, qid, noise, job_server=None, sort=True):
         distances = []
         if self.queryset:
             query = self.queryset[qid]
@@ -100,7 +100,14 @@ class InMemoryDistancesExperiment(object):
             if i == qid:
                 continue
             point = self.dataset[i]
-            distances += [euclidean_distance(point, query)]
+            if job_server:
+                distances += [job_server.submit(euclidean_distance, (point, query,), (), ('numpy',))]
+            else:
+                distances += [euclidean_distance(point, query)]
+        if job_server:
+            for i in range(0,len(distances)):
+                distances[i] = distances[i]()
+                print distances[i]
 
         if sort:
             distances = sorted(distances)
@@ -129,17 +136,16 @@ class InMemoryDistancesExperiment(object):
         distances_plot.save(self.results_directory.create_filename("query_" + str(qid) + "_dist_top100_ratios.png"))
         return distances
 
-    def run(self, queries, noise, seed=10251):
+    def run(self, queries, noise, seed=10251, job_server = None):
         all_distances = []
         for i in range(0, queries):
             random.seed(seed + i)
             qid = random.randint(0, self.loaded_queries - 1)
-            all_distances += [self.calculate_distances(qid, noise)]
-        print len(all_distances)
+            all_distances += [self.calculate_distances(qid, noise, job_server)]
+
         workload_plot = WorkloadPlot()
         workload_plot.add_workload(all_distances)
         workload_plot.save(self.results_directory.create_filename("workload_plot.pdf"))
-        #TODO: Plot error chart
 
     def finalize(self):
         remote_server = SCP("zoumpatianos@disi.unitn.it")

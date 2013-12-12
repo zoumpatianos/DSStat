@@ -1,3 +1,4 @@
+import pp
 from experiments.in_memory_distances_experiment import InMemoryDistancesExperiment
 from parsers.binary_parser import BinaryParser
 from parsers.ascii_parser import AsciiParser
@@ -5,6 +6,10 @@ from containers.file_container import FileContainer
 
 if __name__ == "__main__":
     import sys
+    ncpus = 5
+    ppservers = ()
+    job_server = pp.Server(ncpus=ncpus, ppservers=ppservers)
+
     #parser = BinaryParser(filename=sys.argv[1], ts_size=int(sys.argv[2]))
     dataset_filename = sys.argv[1]
     queryset_filename = sys.argv[2]
@@ -25,7 +30,7 @@ if __name__ == "__main__":
     print "Loaded: %d time series." % len(experiment.queryset)
 
     print "Running experiment..."
-    experiment.run(queries_size, noise=0)
+    experiment.run(queries_size, noise=0, job_server=job_server)
 
     print "Experiment finished..."
     output = experiment.finalize()
