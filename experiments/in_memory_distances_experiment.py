@@ -104,10 +104,10 @@ class InMemoryDistancesExperiment(object):
                 distances += [job_server.submit(euclidean_distance, (point, query,), (), ('numpy',))]
             else:
                 distances += [euclidean_distance(point, query)]
+
         if job_server:
             for i in range(0,len(distances)):
                 distances[i] = distances[i]()
-                print distances[i]
 
         if sort:
             distances = sorted(distances)
