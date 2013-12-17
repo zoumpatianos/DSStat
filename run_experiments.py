@@ -1,14 +1,24 @@
+from __future__ import division
+from math import floor
 import pp
+import sys
 from experiments.in_memory_distances_experiment import InMemoryDistancesExperiment
 from parsers.binary_parser import BinaryParser
 from parsers.ascii_parser import AsciiParser
 from containers.file_container import FileContainer
 
+def progress_f(progress):
+    if not progress[1]:
+        return
+    percentage = ((progress[0] / progress[1]) * 100)
+    if (percentage % 1 == 0):
+        sys.stdout.write("\r%d%%" % percentage)
+        sys.stdout.flush()
+
 if __name__ == "__main__":
-    import sys
-    ncpus = 5
+    ncpus = 1
     ppservers = ()
-    job_server = pp.Server(ncpus=ncpus, ppservers=ppservers)
+    job_server = None#pp.Server(ncpus=ncpus, ppservers=ppservers)
 
     #parser = BinaryParser(filename=sys.argv[1], ts_size=int(sys.argv[2]))
     dataset_filename = sys.argv[1]
@@ -22,15 +32,15 @@ if __name__ == "__main__":
     query_parser = AsciiParser(filename=queryset_filename, ts_size=ts_size)
 
     print "Loading data..."
-    experiment.load_data(dataset_parser, dataset_size)
+    experiment.load_data(dataset_parser, dataset_size, progress_update=progress_f)
     print "Loaded: %d time series." % len(experiment.dataset)
 
     print "Loading queries..."
-    experiment.load_queries(query_parser)
+    experiment.load_queries(query_parser, progress_update=progress_f)
     print "Loaded: %d time series." % len(experiment.queryset)
 
     print "Running experiment..."
-    experiment.run(queries_size, noise=0, job_server=job_server)
+    experiment.run(queries_size, noise=0, job_server=job_server, progress_update=progress_f)
 
     print "Experiment finished..."
     output = experiment.finalize()

@@ -50,11 +50,12 @@ class InMemoryDistancesExperiment(object):
                 self.queryset_plot.add_timeseries(ts_win)
             self.queryset += [ts_win]
 
-    def load_queries(self, parser, size=None):
+    def load_queries(self, parser, size=None, progress_update=lambda x: x):
         self.loaded_queries = 0
         for ts in parser.parse():
             ts = self._load_query(ts)
             self.loaded_queries += 1
+            progress_update((self.loaded_queries, size))
             if size:
                 if self.loaded_queries >= size:
                     break
@@ -80,11 +81,12 @@ class InMemoryDistancesExperiment(object):
                 self.dataset_plot.add_timeseries(ts_win)
             self.dataset += [ts_win]
 
-    def load_data(self, parser, size=None):
+    def load_data(self, parser, size=None, progress_update=lambda x: x):
         self.loaded = 0
         for ts in parser.parse():
             ts = self._load(ts)
             self.loaded += 1
+            progress_update((self.loaded, size))
             if size:
                 if self.loaded >= size:
                     break
@@ -149,7 +151,7 @@ class InMemoryDistancesExperiment(object):
 
         return distances
 
-    def run(self, queries, noise, kset=[1], seed=10251, job_server = None):
+    def run(self, queries, noise, kset=[1], seed=10251, job_server = None, progress_update=lambda x: x):
         all_distances = []
         all_contrasts = {}
 
@@ -164,15 +166,16 @@ class InMemoryDistancesExperiment(object):
             for k in kset:
                 contrast = distances[k]/distances[k-1]
                 all_contrasts[k] += [contrast]
+            progress_update((i, queries))
+
         for k in kset:
             distances_plot = DistancesPlot()
-            distances_plot.add_distances(all_contrasts[k], division_by=len(all_contrasts[k]))
+            distances_plot.add_distances(all_contrasts[k], division_by=len(all_contrasts[k]), max_bin=2, bin_step=0.01)
+            print all_contrasts[k]
             distances_plot.save(self.results_directory.create_filename("contrasts_distribution_top-%d.pdf" % k))
         workload_plot = WorkloadPlot()
         workload_plot.add_workload(all_distances)
         workload_plot.save(self.results_directory.create_filename("workload_plot.pdf"))
-
-
 
     def finalize(self):
         remote_server = SCP("zoumpatianos@disi.unitn.it")
