@@ -5,6 +5,8 @@ import sys
 from experiments.in_memory_distances_experiment import InMemoryDistancesExperiment
 from parsers.binary_parser import BinaryParser
 from parsers.ascii_parser import AsciiParser
+from parsers.generator_wrapper_parser import GeneratorWrapperParser
+from generators.random_walk_generator import RandomWalkGenerator
 from containers.file_container import FileContainer
 
 def progress_f(progress):
@@ -20,16 +22,26 @@ if __name__ == "__main__":
     ppservers = ()
     job_server = None#pp.Server(ncpus=ncpus, ppservers=ppservers)
 
-    #parser = BinaryParser(filename=sys.argv[1], ts_size=int(sys.argv[2]))
+    #parser = BinaryParser(filename=sys.argv[1], ts_length=int(sys.argv[2]))
     dataset_filename = sys.argv[1]
     queryset_filename = sys.argv[2]
-    ts_size = int(sys.argv[3])
+    ts_length = int(sys.argv[3])
     dataset_size = int(sys.argv[4])
     queries_size = int(sys.argv[5])
 
     experiment = InMemoryDistancesExperiment("test_experiment", normalize=True, window=None)
-    dataset_parser = AsciiParser(filename=dataset_filename, ts_size=ts_size)
-    query_parser = AsciiParser(filename=queryset_filename, ts_size=ts_size)
+    dataset_type = dataset_filename[0:5]
+    queryset_type = queryset_filename[0:5]
+
+    if dataset_type == "ASCII":
+        dataset_parser = AsciiParser(filename=dataset_filename[6:], ts_size=ts_length)
+    elif dataset_type == "RWALK":
+        dataset_parser = GeneratorWrapperParser(RandomWalkGenerator(ts_length=ts_length), dataset_size)
+
+    if queryset_type == "ASCII":
+        query_parser = AsciiParser(filename=queryset_filename[6:], ts_size=ts_length)
+    elif queryset_type == "RWALK":
+        query_parser = GeneratorWrapperParser(RandomWalkGenerator(ts_length=ts_length, seed=100), queries_size)
 
     print "Loading data..."
     experiment.load_data(dataset_parser, dataset_size, progress_update=progress_f)
