@@ -14,7 +14,8 @@ from containers.file_container import FileContainer
 from net.scp import SCP
 
 class InMemoryDistancesExperiment(object):
-    def __init__(self, experiment=None, normalize=False, window=None, overwrite=True, only_aggregates=True):
+    def __init__(self, experiment=None, normalize=False, window=None, overwrite=True, only_aggregates=True, in_memory=True):
+        self.in_memory = in_memory
         self.dataset = []
         self.loaded = 0
         self.queryset = []
@@ -82,6 +83,11 @@ class InMemoryDistancesExperiment(object):
             self.dataset += [ts_win]
 
     def load_data(self, parser, size=None, progress_update=lambda x: x):
+        if self.in_memory == False:
+            self.dataset = parser
+            self.loaded = size
+            return
+
         self.loaded = 0
         for ts in parser.parse():
             ts = self._load(ts)
@@ -93,89 +99,73 @@ class InMemoryDistancesExperiment(object):
         if not self.only_aggregates:
             self.dataset_plot.save(self.results_directory.create_filename("dataset.png"))
 
-    def calculate_distances(self, qid, noise, job_server=None, sort=True):
-        distances = []
-        if self.queryset:
-            query = self.queryset[qid]
-        else:
-            query = self.dataset[qid]
-        if noise:
-            if not self.only_aggregates:
-                plot = TimeSeriesPlot()
-                plot.add_timeseries(query)
-            query = add_noise(query, noise)
-            if not self.only_aggregates:
-                plot.add_timeseries(query)
-                plot.save(self.results_directory.create_filename("query_" + str(qid)+".pdf"))
-
-        for i in range(0, self.loaded):
-            if i == qid:
-                continue
-            point = self.dataset[i]
-            if job_server:
-                distances += [job_server.submit(euclidean_distance, (point, query,), (), ('numpy',))]
-            else:
-                distances += [euclidean_distance(point, query)]
-
-        if job_server:
-            for i in range(0,len(distances)):
-                distances[i] = distances[i]()
-
-        if sort:
-            distances = sorted(distances)
-
-        if not self.only_aggregates:
-            query_container = FileContainer(self.results_directory.create_filename("query_%d.txt" % qid), binary=False)
-            query_container.write(query)
-            query_container.close()
-
-            distances_container = FileContainer(self.results_directory.create_filename("query_%d_distances.txt" % qid), binary=False)
-            distances_container.write(distances)
-            distances_container.close()
-
-            distances_histogram = DistancesPlot()
-            bins = distances_histogram.add_distances(distances, division_by=self.loaded)
-            distances_histogram.save(self.results_directory.create_filename("query_" + str(qid) + "_dist_hist.pdf"))
-
-            #distances_ratio = DistancesPlot()
-            #distances_ratio.add_distances(distances / distances[0], ylabel="ratio to 1nn")
-            #distances_ratio.save(self.results_directory.create_filename("query_" + str(qid) + "_dist_ratio_hist.pdf"))
-
-            distances_plot = TimeSeriesPlot()
-            distances_plot.add_timeseries(distances[0:100], ylabel="distance")
-            distances_plot.save(self.results_directory.create_filename("query_" + str(qid) + "_dist_top100.png"))
-
-            distances_plot = TimeSeriesPlot()
-            distances_plot.add_timeseries((distances / distances[0])[0:100], ylabel="ratio to 1nn")
-            distances_plot.save(self.results_directory.create_filename("query_" + str(qid) + "_dist_top100_ratios.png"))
-
-        return distances
-
-    def run(self, queries, noise, kset=[1], seed=10251, job_server = None, progress_update=lambda x: x):
-        all_distances = []
+    def calculate_contrasts(self, queries, kset, job_server=None, sort=True):
         all_contrasts = {}
-
         for k in kset:
             all_contrasts[k] = []
+        all_distances = []
+        for i in range(len(queries)):
+            all_distances += [[]]
 
-        for i in range(0, queries):
+        for i in range(0, self.loaded):
+            if self.in_memory:
+                point = self.dataset[i]
+            else:
+                point = next(self.dataset.parse())
+
+            for query_id in range(len(queries)):
+                query = queries[query_id]
+                if job_server:
+                    all_distances[query_id] += [job_server.submit(euclidean_distance, (point, query,), (), ('numpy',))]
+                else:
+                    all_distances[query_id] += [euclidean_distance(point, query)]
+
+
+        if job_server:
+            for i in range(0,len(all_distances)):
+                for j in range(0, len(all_distances[i])):
+                    all_distances[i][j] = all_distances[i][j]()
+
+
+        for i in range(0,len(all_distances)):
+            all_distances[i] = sorted(all_distances[i])
+
+
+        for k in kset:
+            for distances in all_distances:
+                all_contrasts[k] += [distances[k] / distances[k-1]]
+
+        return all_contrasts
+
+    def run(self, nqueries, noise, kset=[1], seed=10251, job_server = None, progress_update=lambda x: x):
+        all_distances = []
+        queries = []
+
+        # Prepare queries and load them in memory
+        for i in range(0, nqueries):
             random.seed(seed + i)
             qid = random.randint(0, self.loaded_queries - 1)
-            distances = self.calculate_distances(qid, noise, job_server)
-            all_distances += [distances]
-            for k in kset:
-                contrast = distances[k]/distances[k-1]
-                all_contrasts[k] += [contrast]
-            progress_update((i, queries))
+            if self.queryset:
+                query = self.queryset[qid]
+            else:
+                query = self.dataset[qid]
+            if noise:
+                if not self.only_aggregates:
+                    plot = TimeSeriesPlot()
+                    plot.add_timeseries(query)
+                query = add_noise(query, noise)
+                if not self.only_aggregates:
+                    plot.add_timeseries(query)
+                    plot.save(self.results_directory.create_filename("query_" + str(qid)+".pdf"))
+            queries += [query]
 
+        # Calculate contrasts for each k
+        all_contrasts = self.calculate_contrasts(queries, kset, job_server)
         for k in kset:
             distances_plot = DistancesPlot()
             distances_plot.add_distances(all_contrasts[k], division_by=len(all_contrasts[k]), max_bin=2, bin_step=0.01)
             print all_contrasts[k]
             distances_plot.save(self.results_directory.create_filename("contrasts_distribution_top-%d.pdf" % k))
-        workload_plot = WorkloadPlot()
-        workload_plot.add_workload(all_distances)
-        workload_plot.save(self.results_directory.create_filename("workload_plot.pdf"))
 
     def finalize(self):
         remote_server = SCP("zoumpatianos@disi.unitn.it")

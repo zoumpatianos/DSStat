@@ -13,8 +13,9 @@ def progress_f(progress):
     if not progress[1]:
         return
     percentage = ((progress[0] / progress[1]) * 100)
-    if (percentage % 1 == 0):
-        sys.stdout.write("\r%d%%" % percentage)
+
+    if (percentage % 0.1 == 0):
+        sys.stdout.write("\r%.2lf%%" % percentage)
         sys.stdout.flush()
 
 if __name__ == "__main__":
@@ -29,7 +30,7 @@ if __name__ == "__main__":
     dataset_size = int(sys.argv[4])
     queries_size = int(sys.argv[5])
 
-    experiment = InMemoryDistancesExperiment("test_experiment", normalize=True, window=None)
+    experiment = InMemoryDistancesExperiment("test_experiment", normalize=True, window=None, in_memory=False)
     dataset_type = dataset_filename[0:5]
     queryset_type = queryset_filename[0:5]
 
@@ -45,7 +46,7 @@ if __name__ == "__main__":
 
     print "Loading data..."
     experiment.load_data(dataset_parser, dataset_size, progress_update=progress_f)
-    print "Loaded: %d time series." % len(experiment.dataset)
+    print "Loaded: %d time series." % (experiment.loaded)
 
     print "Loading queries..."
     experiment.load_queries(query_parser, progress_update=progress_f)
