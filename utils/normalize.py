@@ -1,5 +1,6 @@
 from __future__ import division
 import numpy
+import numexpr as ne
 
 def normalize(q):
     q = numpy.array(q)
