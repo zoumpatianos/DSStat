@@ -1,8 +1,8 @@
 import sys
-from parsers.ascii_parser import AsciiParser
-from filters.size_filter import SizeFilter
-from window.sliding_window import SlidingWindow
-from containers.file_container import FileContainer
+from tsbench.parsers.ascii_parser import AsciiParser
+from tsbench.filters.size_filter import SizeFilter
+from tsbench.window.sliding_window import SlidingWindow
+from tsbench.containers.file_container import FileContainer
 
 if __name__ == "__main__":
     parser = AsciiParser(sys.argv[1])

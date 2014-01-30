@@ -1,8 +1,8 @@
 import sys
 import numpy as np
-from parsers.binary_parser import BinaryParser
-from plot.timeseries_plot import TimeSeriesPlot
-from containers.file_container import FileContainer
+from tsbench.parsers.binary_parser import BinaryParser
+from tsbench.plot.timeseries_plot import TimeSeriesPlot
+from tsbench.containers.file_container import FileContainer
 
 if __name__ == "__main__":
     filecontainer = FileContainer("good.bin")

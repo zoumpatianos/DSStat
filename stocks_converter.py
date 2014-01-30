@@ -1,9 +1,9 @@
 import sys
 import numpy
-from parsers.stocks_file_parser import StocksFileParser
-from filters.size_filter import SizeFilter
-from window.sliding_window import SlidingWindow
-from containers.file_container import FileContainer
+from tsbench.parsers.stocks_file_parser import StocksFileParser
+from tsbench.filters.size_filter import SizeFilter
+from tsbench.window.sliding_window import SlidingWindow
+from tsbench.containers.file_container import FileContainer
 
 def sane(ts):
     return numpy.std(ts) != 0
